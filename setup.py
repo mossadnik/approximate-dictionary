@@ -23,8 +23,14 @@ setup(
     package_dir={'': 'src'},
     url="https://github.com/mossadnik/approximate-dictionary.git",
     setup_requires=['pytest-runner'],
-    install_requires=[],
-    tests_require=['pytest'],
+    install_requires=[
+        'numpy>=1.16',
+        'numba>=0.44',
+    ],
+    tests_require=[
+        'pytest',
+        'python-levenshtein'
+    ],
     classifiers=[
         'Development Status :: 1 - Planning',
         'Intended Audience :: Science/Research',
