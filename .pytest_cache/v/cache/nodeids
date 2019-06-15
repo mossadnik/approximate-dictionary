@@ -1,5 +1,0 @@
-[
-  "tests/test_nfa.py::test_get_symbol_bitmaps",
-  "tests/test_search.py::test_search",
-  "tests/test_utils.py::test_array_encode_roundtrip"
-]
