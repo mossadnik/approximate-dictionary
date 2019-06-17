@@ -1,3 +1,5 @@
+"""Approximate dictionary search"""
+
 import numpy as np
 import numba
 
@@ -46,6 +48,7 @@ class ApproximateDictionary:
         return parent_edge_ptr, edges, children, records
 
     def search(self, query, max_edits=0):
+        """Search query string in dictionary."""
         pattern = ut.array_encode(query)
         if max_edits == 0:
             # exact search
@@ -55,15 +58,15 @@ class ApproximateDictionary:
                 self._edges,
                 self._children)
             return self._records.get(node, None)
-        else:
-            return self._search_approx(
-                pattern,
-                self._parent_edge_ptr,
-                self._edges,
-                self._children,
-                self.depth,
-                self._records,
-                max_edits)
+        # approximate search
+        return self._search_approx(
+            pattern,
+            self._parent_edge_ptr,
+            self._edges,
+            self._children,
+            self.depth,
+            self._records,
+            max_edits)
 
     @staticmethod
     @numba.njit
@@ -79,49 +82,24 @@ class ApproximateDictionary:
 
     @staticmethod
     @numba.njit
-    def _search_approx(pattern, edge_ptr, edges, children, depth, records, k):
+    def _search_approx(pattern, edge_ptr, edges, children, depth, records, max_edits):
         # initialize NFA
-        bitmaps = nfa.get_symbol_bitmaps(pattern)
-        state_size = k + 1
-        state = np.zeros((depth, state_size), dtype=np.int64)
-
-        state[0] = nfa.initialize_nfa(k)
-        first_active = np.zeros(depth, dtype=state.dtype)
-
-        # stores tuples of (NFA state, Trie state)
-        stack = [(0, idx_edge) for idx_edge in range(edge_ptr[1] - 1, edge_ptr[0] - 1, -1)]
+        matcher = nfa.NFA(pattern, depth, max_edits)
+        # store tuples of (NFA state, Trie state) for simultaneous search
+        start_node = 0
+        stack = [
+            (0, idx_edge)
+            for idx_edge in range(edge_ptr[start_node + 1] - 1, edge_ptr[start_node] - 1, -1)
+        ]
         # results
-        check = 1 << pattern.size
         result = []
         # search
-        while len(stack) > 0:
+        while stack:
             idx_nfa, idx_edge = stack.pop()
             symbol = edges[idx_edge]
-            B = bitmaps.get(symbol, np.int64(0))
-
-            # get NFA state
-            old_state, new_state = state[idx_nfa], state[idx_nfa + 1]
-            old_first_active = first_active[idx_nfa]
-            new_first_active = old_first_active
-
-            # process symbol
-            is_match = False
-            new_state[:old_first_active] = 0
-            for i in range(old_first_active, state_size):
-                new_state[i] = (old_state[i] & B) << 1
-                if i > 0:
-                    new_state[i] |= (
-                        old_state[i - 1]
-                        | (old_state[i - 1] << 1)
-                        | (new_state[i - 1] << 1))
-
-                if new_state[i] == 0:
-                    new_first_active += 1
-                else:
-                    is_match |= (new_state[i] & check) != 0
-
+            is_match = matcher.process_symbol(symbol, idx_nfa)
             # check match / push new nodes
-            if new_first_active < state_size:
+            if matcher.accepts(idx_nfa + 1):
                 # check match
                 node = children[idx_edge]
                 if is_match:
@@ -131,8 +109,8 @@ class ApproximateDictionary:
                 # expand frontier
                 stack += [
                     (idx_nfa + 1, idx_edge)
-                    for idx_edge in range(edge_ptr[node + 1] - 1, edge_ptr[node] - 1, -1)]
-                first_active[idx_nfa + 1] = new_first_active
+                    for idx_edge in range(edge_ptr[node + 1] - 1, edge_ptr[node] - 1, -1)
+                ]
         return result
 
     def __contains__(self, s):
