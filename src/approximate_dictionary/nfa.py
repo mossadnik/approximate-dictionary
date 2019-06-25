@@ -6,6 +6,7 @@ import numba
 
 @numba.njit
 def get_symbol_bitmaps(pattern):
+    """Create dict of symbol location bitmaps."""
     res = dict()
     for i, p in enumerate(pattern):
         if not p in res:
@@ -41,6 +42,7 @@ class NFA:
         self.max_edits = max_edits
 
     def process_symbol(self, symbol, idx_state):
+        """process one symbol from given state."""
         symbol_bitmap = self.bitmaps.get(symbol, np.int64(0))
 
         # get NFA state
@@ -49,7 +51,6 @@ class NFA:
         new_first_active = old_first_active
 
         # process symbol
-        is_match = False
         new_state[:old_first_active] = 0
         for i in range(old_first_active, self.max_edits + 1):
             new_state[i] = (old_state[i] & symbol_bitmap) << 1
@@ -61,10 +62,23 @@ class NFA:
 
             if new_state[i] == 0:
                 new_first_active += 1
-            else:
-                is_match |= (new_state[i] & self._check) != 0
         self.first_active[idx_state + 1] = new_first_active
-        return is_match
 
-    def accepts(self, idx_state):
+    def get_distance(self, idx_state):
+        """Compute Levenshtein distance for given state.
+
+        Returns
+        -------
+        distance : int
+            Levenshtein distance if a final state is active,
+            otherwise -1
+        """
+        state = self.state[idx_state]
+        for i in range(self.first_active[idx_state], self.max_edits + 1):
+            if state[i] & self._check:
+                return i
+        return -1
+
+    def is_active(self, idx_state):
+        """Check whether there are active states."""
         return self.first_active[idx_state] <= self.max_edits

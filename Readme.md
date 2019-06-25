@@ -15,13 +15,15 @@ pip install https://github.com/mossadnik/approximate_dictionary
 Basic usage:
 
 ```python
-from approximate_dictionary import ApproximateDictionary
+from approximate_dictionary import ForwardBackwardTrie
 
 strings = ['anneals', 'annual', 'bet', 'robe']
-dictionary = ApproximateDictionary(strings)
+dictionary = ForwardBackwardTrie.build(strings)
 
+# Returns set of list indices of matching strings are returned
 hits = dictionary.search('robot', max_edits=2)
 
+# To recover strings, they have to be kept as well
 for idx in hits:
     print(strings[idx])
 

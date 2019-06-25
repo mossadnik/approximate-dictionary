@@ -1,1 +1,1 @@
-from .trie import ApproximateDictionary
+from .api import ForwardBackwardTrie
