@@ -115,6 +115,17 @@ class Trie:
 
 
 @numba.njit
+def trie_search(trie, pattern, max_edits):
+    matcher = nfa.NFA(pattern, trie.depth, max_edits)
+    res = set([np.int32(0) for _ in range(0)])
+    for node, distance in trie.iter_matches(np.int32(0), matcher):
+        record = trie.records.get(node, np.int32(-1))
+        if record != -1:
+            res.add(np.int32(record))
+    return res
+
+
+@numba.njit
 def _two_step_search(trie, head, tail,
         max_edits, max_edits_head):
     """Two-step search for FBTrie algorithm"""
@@ -143,16 +154,4 @@ def fbtrie_search(forward_trie, backward_trie, pattern, max_edits):
     res.update(
         _two_step_search(backward_trie, tail[::-1], head[::-1], max_edits=max_edits, max_edits_head=max_edits_head_rev)
     )
-    return res
-
-
-@numba.njit
-def trie_search(trie, pattern, max_edits):
-    """Approximate search with simultaneous Trie+NFA search."""
-    matcher = nfa.NFA(pattern, trie.depth, max_edits)
-    res = set([np.int32(0) for _ in range(0)])
-    for node, _ in trie.iter_matches(np.int32(0), matcher):
-        record = trie.records.get(node_tail, np.int32(-1))
-        if record != -1:
-            res.add(np.int32(record))
     return res

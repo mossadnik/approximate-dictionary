@@ -13,7 +13,7 @@ def _read(fname):
 
 setup(
     name='approximate_dictionary',
-    version='0.0.1',
+    version='0.1.0',
     description='Dictionary with approximate search',
     long_description=_read("Readme.md"),
     author='Matthias Ossadnik',
