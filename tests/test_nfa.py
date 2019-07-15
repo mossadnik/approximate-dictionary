@@ -4,6 +4,7 @@ from approximate_dictionary import nfa
 
 
 def test_get_symbol_bitmaps():
+    """test conversion of sequence to symbol bitmaps."""
     pattern = np.array([1, 1, 2, 3], dtype=np.int32)
     bitmaps = nfa.get_symbol_bitmaps(pattern)
     # check keys are unique symbols

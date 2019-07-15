@@ -116,6 +116,7 @@ class Trie:
 
 @numba.njit
 def trie_search(trie, pattern, max_edits):
+    """Search pattern within edit distance."""
     matcher = nfa.NFA(pattern, trie.depth, max_edits)
     res = set([np.int32(0) for _ in range(0)])
     for node, distance in trie.iter_matches(np.int32(0), matcher):
@@ -126,7 +127,8 @@ def trie_search(trie, pattern, max_edits):
 
 
 @numba.njit
-def _two_step_search(trie, head, tail,
+def _two_step_search(
+        trie, head, tail,
         max_edits, max_edits_head):
     """Two-step search for FBTrie algorithm"""
     # initialize NFAs

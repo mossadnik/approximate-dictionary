@@ -1,7 +1,12 @@
 """Row-wise bit parallel NFA for Levenshtein distance."""
 
+import warnings
+
 import numpy as np
 import numba
+
+
+warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
 
 
 @numba.njit
@@ -33,6 +38,7 @@ def initialize_nfa(k):
     ('max_edits', numba.int64),
 ])
 class NFA:
+    """Row-wise bit parallel Levenshtein matcher."""
     def __init__(self, pattern, max_states, max_edits):
         self.bitmaps = get_symbol_bitmaps(pattern)
         self.state = np.zeros((max_states, max_edits + 1), dtype=np.int64)
