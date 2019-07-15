@@ -32,7 +32,7 @@ def create_index(strings, method='fb-trie'):
         'trie': TrieIndex,
         'fb-trie': ForwardBackwardTrieIndex,
     }
-    if not method in index_cls:
+    if method not in index_cls:
         raise ValueError('method must be one of ("trie", "fb-trie").')
     return index_cls[method].create_index(strings)
 
@@ -57,7 +57,7 @@ class TrieIndex:
         trie = core.create_trie(strings)
         return cls(trie)
 
-    def search(self, s, max_edits=0):
+    def search(self, s, max_edits=0, return_distances=True):
         """Search dictionary.
 
         Note that only the indices of the matching strings are returned, so that
@@ -73,13 +73,16 @@ class TrieIndex:
 
         Returns
         -------
-        hits : set of int
+        hits : set or dict
             Sequence indices of the strings that match the query.
+            If return_distances is set to True, returns { index -> distance }.
         """
         pattern = ut.array_encode(s)
         if max_edits == 0:
-            return self._trie.search(pattern)
-        return core.trie_search(self._trie, pattern, max_edits)
+            res = {k: 0 for k in self._trie.search(pattern)}
+        else:
+            res = dict(core.trie_search(self._trie, pattern, max_edits))
+        return res if return_distances else set(res.keys())
 
 
 class ForwardBackwardTrieIndex:
@@ -111,7 +114,7 @@ class ForwardBackwardTrieIndex:
         backward_trie = core.create_trie([s[::-1] for s in strings])
         return cls(forward_trie, backward_trie)
 
-    def search(self, s, max_edits=0):
+    def search(self, s, max_edits=0, return_distances=True):
         """Search dictionary.
 
         Note that only the indices of the matching strings are returned, so that
@@ -129,8 +132,12 @@ class ForwardBackwardTrieIndex:
         -------
         hits : set of int
             Sequence indices of the strings that match the query.
+            If return_distances is set to True, returns { index -> distance }.
         """
         pattern = ut.array_encode(s)
         if max_edits == 0:
-            return self._forward_trie.search(pattern)
-        return core.fbtrie_search(self._forward_trie, self._backward_trie, pattern, max_edits)
+            res = {k: 0 for k in self._forward_trie.search(pattern)}
+        else:
+            res = dict(
+                core.fbtrie_search(self._forward_trie, self._backward_trie, pattern, max_edits))
+        return res if return_distances else set(res.keys())

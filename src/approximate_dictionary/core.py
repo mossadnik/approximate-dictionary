@@ -118,11 +118,17 @@ class Trie:
 def trie_search(trie, pattern, max_edits):
     """Search pattern within edit distance."""
     matcher = nfa.NFA(pattern, trie.depth, max_edits)
-    res = set([np.int32(0) for _ in range(0)])
+    res = numba.typed.Dict.empty(
+        key_type=np.int32,
+        value_type=np.int64
+    )
     for node, distance in trie.iter_matches(np.int32(0), matcher):
-        record = trie.records.get(node, np.int32(-1))
+        record = np.int32(trie.records.get(node, np.int32(-1)))
         if record != -1:
-            res.add(np.int32(record))
+            if record in res:
+                res[record] = min(res[record], distance)
+            else:
+                res[record] = distance
     return res
 
 
@@ -134,14 +140,19 @@ def _two_step_search(
     # initialize NFAs
     head_matcher = nfa.NFA(head, trie.depth, max_edits_head)
     tail_matcher = nfa.NFA(tail, trie.depth, max_edits)
-    # see https://numba.pydata.org/numba-doc/dev/user/troubleshoot.html, section on untyped lists
-    res = set([np.int32(0) for _ in range(0)])
+    res = numba.typed.Dict.empty(
+        key_type=np.int32,
+        value_type=np.int64
+    )
     for node_head, distance_head in trie.iter_matches(np.int32(0), head_matcher):
         tail_matcher.max_edits = max_edits - distance_head
         for node_tail, distance_tail in trie.iter_matches(node_head, tail_matcher):
-            record = trie.records.get(node_tail, np.int32(-1))
+            record = np.int32(trie.records.get(node_tail, np.int32(-1)))
             if record != -1:
-                res.add(np.int32(record))
+                if record in res:
+                    res[record] = min(res[record], distance_head + distance_tail)
+                else:
+                    res[record] = distance_head + distance_tail
     return res
 
 
@@ -152,8 +163,13 @@ def fbtrie_search(forward_trie, backward_trie, pattern, max_edits):
     head, tail = pattern[:split], pattern[split:]
     max_edits_head = int(np.ceil(max_edits / 2)) - 1
     max_edits_head_rev = int(np.floor(max_edits / 2))
-    res = _two_step_search(forward_trie, head, tail, max_edits=max_edits, max_edits_head=max_edits_head)
-    res.update(
-        _two_step_search(backward_trie, tail[::-1], head[::-1], max_edits=max_edits, max_edits_head=max_edits_head_rev)
-    )
+    res = _two_step_search(
+        forward_trie, head, tail, max_edits=max_edits, max_edits_head=max_edits_head)
+    backward = _two_step_search(
+        backward_trie, tail[::-1], head[::-1], max_edits=max_edits, max_edits_head=max_edits_head_rev)
+    for k, v in backward.items():
+        if k in res:
+            res[k] = min(res[k], v)
+        else:
+            res[k] = v
     return res

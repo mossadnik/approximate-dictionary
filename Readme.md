@@ -20,8 +20,10 @@ from approximate_dictionary import create_index
 strings = ['anneals', 'annual', 'bet', 'robe']
 dictionary = create_index(strings, method='fb-trie')
 
-# Returns set of list indices of matching strings are returned
-hits = dictionary.search('robot', max_edits=2)
+# Returns dict of { list index -> edit distance } for matching strings
+# If return_distances is False, returns a set of indices instead.
+hits = dictionary.search('robot', max_edits=2, return_distances=True)
+
 
 # To recover strings, they have to be kept as well
 for idx in hits:
