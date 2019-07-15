@@ -13,7 +13,7 @@ def _read(fname):
 
 setup(
     name='approximate_dictionary',
-    version='0.1.0',
+    version='0.2.0',
     description='Dictionary with approximate search',
     long_description=_read("Readme.md"),
     author='Matthias Ossadnik',
@@ -32,10 +32,10 @@ setup(
         'python-levenshtein'
     ],
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        'Topic :: Scientific/Engineering',
+        'Topic :: Text Processing :: Indexing',
     ],
 )
