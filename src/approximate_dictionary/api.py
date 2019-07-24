@@ -1,4 +1,4 @@
-"""Approximate dictionary search"""
+"""Exposed classes and functions."""
 
 from . import utils as ut
 from . import core
@@ -38,6 +38,7 @@ def create_index(strings, method='fb-trie'):
 
 
 class TrieIndex:
+    """String index based on forward Trie."""
     def __init__(self, trie):
         """Constructor for internal use only. Use Trie.build instead."""
         self._trie = trie
@@ -52,6 +53,7 @@ class TrieIndex:
             Strings to index.
 
         Returns
+        -------
         Trie
         """
         trie = core.create_trie(strings)
@@ -88,7 +90,7 @@ class TrieIndex:
 class ForwardBackwardTrieIndex:
     """FBTrie method for approximate dictionary search.
 
-    This method uses twice as much memory as the Trie method, but is 3-10 times faster.
+    This method uses about twice as much memory as the Trie method, but is several times faster.
 
     see
     Boytsov 2011: Indexing Methods for Approximate Dictionary Searching: Comparative Analysis
@@ -108,6 +110,7 @@ class ForwardBackwardTrieIndex:
             Strings to index.
 
         Returns
+        -------
         ForwardBackwardTrieIndex
         """
         forward_trie = core.create_trie(strings)

@@ -22,7 +22,7 @@ def get_symbol_bitmaps(pattern):
 
 @numba.njit
 def initialize_nfa(k):
-    """create array with initial states"""
+    """Create array with initial states."""
     res = np.empty(k + 1, dtype=np.int64)
     res[0] = 1
     for i in range(1, k + 1):
@@ -48,7 +48,7 @@ class NFA:
         self.max_edits = max_edits
 
     def process_symbol(self, symbol, idx_state):
-        """process one symbol from given state."""
+        """Process one symbol from given state."""
         symbol_bitmap = self.bitmaps.get(symbol, np.int64(0))
 
         # get NFA state
@@ -72,6 +72,12 @@ class NFA:
 
     def get_distance(self, idx_state):
         """Compute Levenshtein distance for given state.
+
+        Parameters
+        ----------
+        idx_state : int
+            Index of the current state, equals number of characters
+            consumed.
 
         Returns
         -------
