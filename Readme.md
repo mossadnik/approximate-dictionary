@@ -9,7 +9,7 @@
 Install from github
 
 ```
-pip install https://github.com/mossadnik/approximate-dictionary
+pip install git+https://github.com/mossadnik/approximate-dictionary
 ```
 
 Basic usage:
