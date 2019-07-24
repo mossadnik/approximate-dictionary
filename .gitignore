@@ -1,7 +1,9 @@
 __pycache__/
+*.pyc
+
 .cache/
 .pytest_cache/
-*.pyc
+.coverage
 
 /.tox
 /.python-version
