@@ -72,6 +72,8 @@ class TrieIndex:
             query string
         max_edits : int, optional
             maximum edit distance, defaults to zero.
+        return_distances : bool, optional
+            whether to return edit distances, default True.
 
         Returns
         -------
@@ -85,6 +87,12 @@ class TrieIndex:
         else:
             res = dict(core.trie_search(self._trie, pattern, max_edits))
         return res if return_distances else set(res.keys())
+
+    def __getstate__(self):
+        return core.get_trie_state(self._trie)
+
+    def __setstate__(self, state):
+        self.__dict__.update(_trie=core.create_trie_from_state(*state))
 
 
 class ForwardBackwardTrieIndex:
@@ -130,6 +138,8 @@ class ForwardBackwardTrieIndex:
             query string
         max_edits : int, optional
             maximum edit distance, defaults to zero.
+        return_distances : bool, optional
+            whether to return edit distances, default True.
 
         Returns
         -------
@@ -144,3 +154,15 @@ class ForwardBackwardTrieIndex:
             res = dict(
                 core.fbtrie_search(self._forward_trie, self._backward_trie, pattern, max_edits))
         return res if return_distances else set(res.keys())
+
+    def __getstate__(self):
+        return {
+            k: core.get_trie_state(getattr(self, k))
+            for k in ['_forward_trie', '_backward_trie']
+        }
+
+    def __setstate__(self, state):
+        self.__dict__.update({
+            k: core.create_trie_from_state(*v)
+            for k, v in state.items()
+        })

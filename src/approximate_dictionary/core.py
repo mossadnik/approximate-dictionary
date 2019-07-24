@@ -44,6 +44,16 @@ def create_trie(strings):
     return Trie(edge_ptr, edges, children, records, depth)
 
 
+def get_trie_state(trie):
+    """Get trie state for serialization."""
+    return (trie.edge_ptr, trie.edges, trie.children, dict(trie.records), trie.depth)
+
+def create_trie_from_state(edge_ptr, edges, children, records, depth):
+    numba_records = numba.typed.Dict().empty(key_type=numba.int32, value_type=numba.int32)
+    numba_records.update(records)
+    return Trie(edge_ptr, edges, children, numba_records, depth)
+
+
 @numba.jitclass([
     ('edge_ptr', numba.int32[:]),
     ('edges', numba.int32[:]),
@@ -63,17 +73,17 @@ class Trie:
     def search(self, pattern):
         """Exact pattern search."""
         edge_ptr, edges, children = self.edge_ptr, self.edges, self.children
-        node = np.int32(0)
-        failed = np.int32(-1)
+        node = numba.int32(0)
+        failed = numba.int32(-1)
         for c in pattern:
             lo, hi = edge_ptr[node:node + 2]
             idx = lo + np.searchsorted(edges[lo:hi], c, side='left')
             if idx >= hi or c != edges[idx]:
-                return set([np.int32(0) for i in range(0)])
+                return set([numba.int32(0) for i in range(0)])
             node = children[idx]
-        res = np.int32(self.records.get(node, failed))
+        res = numba.int32(self.records.get(node, failed))
         if res == -1:
-            return set([np.int32(0) for i in range(0)])
+            return set([numba.int32(0) for i in range(0)])
         return set([res])
 
 
@@ -85,7 +95,7 @@ class Trie:
         node, distance : tuple of int
         """
         edge_ptr, edges, children = self.edge_ptr, self.edges, self.children
-        start_node = np.int32(start_node)
+        start_node = numba.int32(start_node)
         # store tuples of (NFA state, Trie state) for simultaneous search
         stack = [
             (0, idx_edge)
@@ -119,11 +129,11 @@ def trie_search(trie, pattern, max_edits):
     """Search pattern within edit distance."""
     matcher = nfa.NFA(pattern, trie.depth, max_edits)
     res = numba.typed.Dict.empty(
-        key_type=np.int32,
-        value_type=np.int64
+        key_type=numba.int32,
+        value_type=numba.int64
     )
-    for node, distance in trie.iter_matches(np.int32(0), matcher):
-        record = np.int32(trie.records.get(node, np.int32(-1)))
+    for node, distance in trie.iter_matches(numba.int32(0), matcher):
+        record = numba.int32(trie.records.get(node, numba.int32(-1)))
         if record != -1:
             if record in res:
                 res[record] = min(res[record], distance)
@@ -141,13 +151,13 @@ def _two_step_search(
     head_matcher = nfa.NFA(head, trie.depth, max_edits_head)
     tail_matcher = nfa.NFA(tail, trie.depth, max_edits)
     res = numba.typed.Dict.empty(
-        key_type=np.int32,
-        value_type=np.int64
+        key_type=numba.int32,
+        value_type=numba.int64
     )
-    for node_head, distance_head in trie.iter_matches(np.int32(0), head_matcher):
+    for node_head, distance_head in trie.iter_matches(numba.int32(0), head_matcher):
         tail_matcher.max_edits = max_edits - distance_head
         for node_tail, distance_tail in trie.iter_matches(node_head, tail_matcher):
-            record = np.int32(trie.records.get(node_tail, np.int32(-1)))
+            record = numba.int32(trie.records.get(node_tail, numba.int32(-1)))
             if record != -1:
                 if record in res:
                     res[record] = min(res[record], distance_head + distance_tail)
