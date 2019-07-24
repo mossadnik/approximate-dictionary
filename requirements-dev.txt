@@ -1,3 +1,4 @@
 -e .
 pylint
 pytest
+bump2version
